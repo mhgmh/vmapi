@@ -1,0 +1,13 @@
+services:
+  sub2api:
+    container_name: sub2api-v2
+    image: sub2api-v2:local
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+
+  postgres:
+    container_name: sub2api-v2-postgres
+
+  redis:
+    container_name: sub2api-v2-redis

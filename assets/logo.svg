@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">vmapi</title>
+  <desc id="desc">vmapi brand mark</desc>
+  <defs>
+    <linearGradient id="g" x1="96" y1="72" x2="400" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="45%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(36 28)">
+    <path fill="url(#g)" d="M70 48c18 0 33 10 41 34l78 236c7 22 18 33 35 33s28-11 35-33l78-236c8-24 23-34 41-34 21 0 37 16 37 37 0 8-2 15-6 24L305 392c-17 42-44 66-81 66s-64-24-81-66L39 109c-4-9-6-16-6-24 0-21 16-37 37-37z"/>
+    <path fill="url(#g)" d="M292 168h108a18 18 0 0 1 0 36H304a18 18 0 0 1-12-30z"/>
+    <path fill="url(#g)" d="M308 228h120a18 18 0 0 1 0 36H320a18 18 0 0 1-12-30z"/>
+    <path fill="url(#g)" d="M296 288h96a18 18 0 0 1 0 36H308a18 18 0 0 1-12-30z"/>
+  </g>
+</svg>
