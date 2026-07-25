@@ -39,7 +39,17 @@
 
 ## Seedance 视频能力
 
-vmapi 增加了独立的 `seedance` 平台（不挂在 OpenAI/Grok 下）：
+vmapi 增加了独立的 `seedance` 平台（不挂在 OpenAI/Grok 下）。
+
+**对外入口是你自己的 vmapi 部署地址**，不是上游厂商域名：
+
+```text
+https://你的域名/v1/video/generations
+https://你的域名/v1/video/generations/:task_id
+https://你的域名/v1/assets/uploads
+```
+
+本地示例：`http://127.0.0.1:1800`（或你实际对外端口）。
 
 | 项目 | 说明 |
 |------|------|
@@ -48,8 +58,8 @@ vmapi 增加了独立的 `seedance` 平台（不挂在 OpenAI/Grok 下）：
 | 查询任务 | `GET /v1/video/generations/:task_id` |
 | 上传素材 | `POST /v1/assets/uploads` |
 | 账号类型 | 仅 API Key |
-| 默认 base_url | `https://api.7tai.cc/v1` |
-| 鉴权 | `Authorization: Bearer <token>` |
+| 上游 base_url | 在 Seedance 账号凭证里配置（`credentials.base_url`）；为空时才会走内置上游兜底 |
+| 客户端鉴权 | `Authorization: Bearer <vmapi_api_key>` |
 | 计费 | 任务受理（返回 task_id）时计费；`video`=元/秒，`per_request`=元/次 |
 
 ## 技术栈

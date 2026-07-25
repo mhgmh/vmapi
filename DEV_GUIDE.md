@@ -84,13 +84,15 @@ docker compose -f deploy/docker-compose.local-instance.yml up -d --build
 
 ### 3. Seedance 路径注意单数 video
 
-Seedance 原生路径是：
+客户端应调用 **你自己的 vmapi 网关**，例如：
 
-- `POST /v1/video/generations`
-- `GET /v1/video/generations/:task_id`
-- `POST /v1/assets/uploads`
+- `POST https://你的域名/v1/video/generations`
+- `GET https://你的域名/v1/video/generations/:task_id`
+- `POST https://你的域名/v1/assets/uploads`
 
 注意是 `video`（单数），不是 Grok 的 `/videos`。
+
+上游厂商地址写在 Seedance **账号** 的 `credentials.base_url` 里；对外文档不要把上游域名写成 vmapi 默认入口。
 
 ## 六、相关文档
 

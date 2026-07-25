@@ -39,7 +39,17 @@
 
 ## Seedance 動画サポート
 
-vmapi は独立した `seedance` プラットフォームを追加しています（OpenAI/Grok 配下ではありません）：
+vmapi は独立した `seedance` プラットフォームを追加しています（OpenAI/Grok 配下ではありません）。
+
+**クライアント向け入口は、あなた自身の vmapi デプロイ先**です。上流ベンダーのホストではありません：
+
+```text
+https://YOUR_VMAPI_HOST/v1/video/generations
+https://YOUR_VMAPI_HOST/v1/video/generations/:task_id
+https://YOUR_VMAPI_HOST/v1/assets/uploads
+```
+
+ローカル例: `http://127.0.0.1:1800`（公開ポートに合わせて変更）。
 
 | 項目 | 内容 |
 |------|------|
@@ -48,8 +58,8 @@ vmapi は独立した `seedance` プラットフォームを追加していま�
 | タスク照会 | `GET /v1/video/generations/:task_id` |
 | アセットアップロード | `POST /v1/assets/uploads` |
 | アカウント種別 | API Key のみ |
-| デフォルト base_url | `https://api.7tai.cc/v1` |
-| 認証 | `Authorization: Bearer <token>` |
+| 上流 base_url | Seedance アカウントの `credentials.base_url` で設定。空のときのみ組み込み上流フォールバックを使用 |
+| クライアント認証 | `Authorization: Bearer <vmapi_api_key>` |
 | 課金 | タスク受理時に課金（`video`=元/秒、`per_request`=元/回） |
 
 ## 技術スタック

@@ -39,7 +39,17 @@ This repository is the **vmapi** fork, with first-class **Seedance / video gener
 
 ## Seedance Video Support
 
-vmapi adds an independent `seedance` platform (not mounted under OpenAI/Grok):
+vmapi adds an independent `seedance` platform (not mounted under OpenAI/Grok).
+
+**Client-facing entrypoint** is your own vmapi deployment, not the upstream vendor host:
+
+```text
+https://YOUR_VMAPI_HOST/v1/video/generations
+https://YOUR_VMAPI_HOST/v1/video/generations/:task_id
+https://YOUR_VMAPI_HOST/v1/assets/uploads
+```
+
+Local example: `http://127.0.0.1:1800` (or the port you publish).
 
 | Item | Detail |
 |------|--------|
@@ -48,8 +58,8 @@ vmapi adds an independent `seedance` platform (not mounted under OpenAI/Grok):
 | Query task | `GET /v1/video/generations/:task_id` |
 | Upload asset | `POST /v1/assets/uploads` |
 | Account type | API Key only |
-| Default base URL | `https://api.7tai.cc/v1` |
-| Auth | `Authorization: Bearer <token>` |
+| Upstream base URL | configured per Seedance account (`credentials.base_url`); leave empty only if you intentionally use the built-in vendor fallback |
+| Client auth | `Authorization: Bearer <vmapi_api_key>` |
 | Billing | charged when task is accepted (`video` = CNY/sec, `per_request` = CNY/call) |
 
 ## Tech Stack
