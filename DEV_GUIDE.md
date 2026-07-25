@@ -1,35 +1,34 @@
-# sub2api 项目开发指南
+# vmapi 项目开发指南
 
-> 本文档记录项目环境配置、常见坑点和注意事项，供 Claude Code 和团队成员参考。
+> 本文档记录项目环境配置、常见坑点和注意事项，供开发与运维参考。
 
 ## 一、项目基本信息
 
 | 项目 | 说明 |
 |------|------|
-| **上游仓库** | Wei-Shaw/sub2api |
-| **Fork 仓库** | bayma888/sub2api-bmai |
+| **本仓库** | [mhgmh/vmapi](https://github.com/mhgmh/vmapi) |
+| **上游参考** | Wei-Shaw/sub2api（LGPL-3.0） |
 | **技术栈** | Go 后端 (Ent ORM + Gin) + Vue3 前端 (pnpm) |
-| **数据库** | PostgreSQL 16 + Redis |
-| **包管理** | 后端: go modules, 前端: **pnpm**（不是 npm） |
+| **数据库** | PostgreSQL 15/16 + Redis 7+ |
+| **包管理** | 后端: go modules，前端: **pnpm**（不是 npm） |
+| **特色增强** | Seedance 视频平台（`platform=seedance`）+ vmapi 品牌 |
 
 ## 二、本地环境配置
 
-### PostgreSQL 16 (Windows 服务)
+### PostgreSQL
 
-| 配置项 | 值 |
-|--------|-----|
+| 配置项 | 建议值 |
+|--------|--------|
 | 端口 | 5432 |
-| psql 路径 | `C:\Program Files\PostgreSQL\16\bin\psql.exe` |
-| pg_hba.conf | `C:\Program Files\PostgreSQL\16\data\pg_hba.conf` |
-| 数据库凭据 | user=`sub2api`, password=`sub2api`, dbname=`sub2api` |
-| 超级用户 | user=`postgres`, password=`postgres` |
+| 数据库 | `vmapi` 或 `sub2api` |
+| 用户/密码 | 与 compose / config 保持一致 |
 
 ### Redis
 
-| 配置项 | 值 |
-|--------|-----|
+| 配置项 | 建议值 |
+|--------|--------|
 | 端口 | 6379 |
-| 密码 | 无 |
+| 密码 | 按环境配置 |
 
 ### 开发工具
 
@@ -37,26 +36,11 @@
 # golangci-lint v2.7
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7
 
-# pnpm (前端包管理)
+# pnpm（前端包管理）
 npm install -g pnpm
 ```
 
-## 三、CI/CD 流水线
-
-### GitHub Actions Workflows
-
-| Workflow | 触发条件 | 检查内容 |
-|----------|----------|----------|
-| **backend-ci.yml** | push, pull_request | 单元测试 + 集成测试 + golangci-lint v2.7 |
-| **security-scan.yml** | push, pull_request, 每周一 | govulncheck + gosec + pnpm audit |
-| **release.yml** | tag `v*` | 构建发布（PR 不触发） |
-
-### CI 要求
-
-- Go 版本必须是 **1.25.7**
-- 前端使用 `pnpm install --frozen-lockfile`，必须提交 `pnpm-lock.yaml`
-
-### 本地测试命令
+## 三、常用命令
 
 ```bash
 # 后端单元测试
@@ -70,277 +54,46 @@ cd backend && golangci-lint run ./...
 
 # 前端依赖安装（必须用 pnpm）
 cd frontend && pnpm install
+
+# 前端开发 / 构建
+cd frontend && pnpm run dev
+cd frontend && pnpm run build
 ```
 
-## 四、常见坑点 & 解决方案
-
-### 坑 1：pnpm-lock.yaml 必须同步提交
-
-**问题**：`package.json` 新增依赖后，CI 的 `pnpm install --frozen-lockfile` 失败。
-
-**原因**：上游 CI 使用 pnpm，lock 文件不同步会报错。
-
-**解决**：
-```bash
-cd frontend
-pnpm install  # 更新 pnpm-lock.yaml
-git add pnpm-lock.yaml
-git commit -m "chore: update pnpm-lock.yaml"
-```
-
----
-
-### 坑 2：npm 和 pnpm 的 node_modules 冲突
-
-**问题**：之前用 npm 装过 `node_modules`，pnpm install 报 `EPERM` 错误。
-
-**解决**：
-```bash
-cd frontend
-rm -rf node_modules  # 或 PowerShell: Remove-Item -Recurse -Force node_modules
-pnpm install
-```
-
----
-
-### 坑 3：PowerShell 中 bcrypt hash 的 `$` 被转义
-
-**问题**：bcrypt hash 格式如 `$2a$10$xxx...`，PowerShell 把 `$2a` 当变量解析，导致数据丢失。
-
-**解决**：将 SQL 写入文件，用 `psql -f` 执行：
-```bash
-# 错误示范（PowerShell 会吃掉 $）
-psql -c "INSERT INTO users ... VALUES ('$2a$10$...')"
-
-# 正确做法
-echo "INSERT INTO users ... VALUES ('\$2a\$10\$...')" > temp.sql
-psql -U sub2api -h 127.0.0.1 -d sub2api -f temp.sql
-```
-
----
-
-### 坑 4：psql 不支持中文路径
-
-**问题**：`psql -f "D:\中文路径\file.sql"` 报错找不到文件。
-
-**解决**：复制到纯英文路径再执行：
-```bash
-cp "D:\中文路径\file.sql" "C:\temp.sql"
-psql -f "C:\temp.sql"
-```
-
----
-
-### 坑 5：PostgreSQL 密码重置流程
-
-**场景**：忘记 PostgreSQL 密码。
-
-**步骤**：
-1. 修改 `C:\Program Files\PostgreSQL\16\data\pg_hba.conf`
-   ```
-   # 将 scram-sha-256 改为 trust
-   host    all    all    127.0.0.1/32    trust
-   ```
-2. 重启 PostgreSQL 服务
-   ```powershell
-   Restart-Service postgresql-x64-16
-   ```
-3. 无密码登录并重置
-   ```bash
-   psql -U postgres -h 127.0.0.1
-   ALTER USER sub2api WITH PASSWORD 'sub2api';
-   ALTER USER postgres WITH PASSWORD 'postgres';
-   ```
-4. 改回 `scram-sha-256` 并重启
-
----
-
-### 坑 6：Go interface 新增方法后 test stub 必须补全
-
-**问题**：给 interface 新增方法后，编译报错 `does not implement interface (missing method XXX)`。
-
-**原因**：所有测试文件中实现该 interface 的 stub/mock 都必须补上新方法。
-
-**解决**：
-```bash
-# 搜索所有实现该 interface 的 struct
-cd backend
-grep -r "type.*Stub.*struct" internal/
-grep -r "type.*Mock.*struct" internal/
-
-# 逐一补全新方法
-```
-
----
-
-### 坑 7：Windows 上 psql 连 localhost 的 IPv6 问题
-
-**问题**：psql 连 `localhost` 先尝试 IPv6 (::1)，可能报错后再回退 IPv4。
-
-**建议**：直接用 `127.0.0.1` 代替 `localhost`。
-
----
-
-### 坑 8：Windows 没有 make 命令
-
-**问题**：CI 里用 `make test-unit`，本地 Windows 没有 make。
-
-**解决**：直接用 Makefile 里的原始命令：
-```bash
-# 代替 make test-unit
-go test -tags=unit ./...
-
-# 代替 make test-integration
-go test -tags=integration ./...
-```
-
----
-
-### 坑 9：Ent Schema 修改后必须重新生成
-
-**问题**：修改 `ent/schema/*.go` 后，代码不生效。
-
-**解决**：
-```bash
-cd backend
-go generate ./ent  # 重新生成 ent 代码
-git add ent/       # 生成的文件也要提交
-```
-
----
-
-### 坑 10：前端测试看似正常，但后端调用失败（模型映射被批量误改）
-
-**典型现象**：
-- 前端按钮点测看起来正常；
-- 实际通过 API/客户端调用时返回 `Service temporarily unavailable` 或提示无可用账号；
-- 常见于 OpenAI 账号（例如 Codex 模型）在批量修改后突然不可用。
-
-**根因**：
-- OpenAI 账号编辑页默认不显式展示映射规则，容易让人误以为“没映射也没关系”；
-- 但在**批量修改同时选中不同平台账号**（OpenAI + Antigravity/Gemini）时，模型白名单/映射可能被跨平台策略覆盖；
-- 结果是 OpenAI 账号的关键模型映射丢失或被改坏，后端选不到可用账号。
-
-**修复方案（按优先级）**：
-1. **快速修复（推荐）**：在批量修改中补回正确的透传映射（例如 `gpt-5.3-codex -> gpt-5.3-codex-spark`）。
-2. **彻底重建**：删除并重新添加全部相关账号（最稳但成本高）。
-
-**关键经验**：
-- 如果某模型已被软件内置默认映射覆盖，通常不需要额外再加透传；
-- 但当上游模型更新快于本仓库默认映射时，**手动批量添加透传映射**是最简单、最低风险的临时兜底方案；
-- 批量操作前尽量按平台分组，不要混选不同平台账号。
-
----
-
-### 坑 11：PR 提交前检查清单
-
-提交 PR 前务必本地验证：
-
-- [ ] `go test -tags=unit ./...` 通过
-- [ ] `go test -tags=integration ./...` 通过
-- [ ] `golangci-lint run ./...` 无新增问题
-- [ ] `pnpm-lock.yaml` 已同步（如果改了 package.json）
-- [ ] 所有 test stub 补全新接口方法（如果改了 interface）
-- [ ] Ent 生成的代码已提交（如果改了 schema）
-
-## 五、常用命令速查
-
-### 数据库操作
+## 四、Docker 本地实例
 
 ```bash
-# 连接数据库
-psql -U sub2api -h 127.0.0.1 -d sub2api
-
-# 查看所有用户
-psql -U postgres -h 127.0.0.1 -c "\du"
-
-# 查看所有数据库
-psql -U postgres -h 127.0.0.1 -c "\l"
-
-# 执行 SQL 文件
-psql -U sub2api -h 127.0.0.1 -d sub2api -f migration.sql
+# 仓库根目录
+docker compose -f deploy/docker-compose.local-instance.yml up -d --build
 ```
 
-### Git 操作
+默认本地入口可参考部署配置（常见为 `http://127.0.0.1:1800` 或 `8080`）。
 
-```bash
-# 同步上游
-git fetch upstream
-git checkout main
-git merge upstream/main
-git push origin main
+## 五、常见坑点
 
-# 创建功能分支
-git checkout -b feature/xxx
+### 1. pnpm-lock.yaml 必须同步提交
 
-# Rebase 到最新 main
-git fetch upstream
-git rebase upstream/main
-```
+`package.json` 改依赖后，务必同步更新并提交 `pnpm-lock.yaml`，否则 `pnpm install --frozen-lockfile` 会失败。
 
-### 前端操作
+### 2. Google OAuth 凭据不要硬编码
 
-```bash
-# 安装依赖（必须用 pnpm）
-cd frontend
-pnpm install
+公开仓库已去掉内置 Google OAuth Client Secret。如需 Antigravity / Gemini CLI 相关能力，请通过环境变量配置：
 
-# 开发服务器
-pnpm dev
+- `ANTIGRAVITY_OAUTH_CLIENT_SECRET`
+- `GEMINI_CLI_OAUTH_CLIENT_SECRET`
 
-# 构建
-pnpm build
-```
+### 3. Seedance 路径注意单数 video
 
-### 后端操作
+Seedance 原生路径是：
 
-```bash
-# 运行服务器
-cd backend
-go run ./cmd/server/
+- `POST /v1/video/generations`
+- `GET /v1/video/generations/:task_id`
+- `POST /v1/assets/uploads`
 
-# 生成 Ent 代码
-go generate ./ent
+注意是 `video`（单数），不是 Grok 的 `/videos`。
 
-# 运行测试
-go test -tags=unit ./...
-go test -tags=integration ./...
+## 六、相关文档
 
-# Lint 检查
-golangci-lint run ./...
-```
-
-## 六、项目结构速览
-
-```
-sub2api-bmai/
-├── backend/
-│   ├── cmd/server/          # 主程序入口
-│   ├── ent/                 # Ent ORM 生成代码
-│   │   └── schema/          # 数据库 Schema 定义
-│   ├── internal/
-│   │   ├── handler/         # HTTP 处理器
-│   │   ├── service/         # 业务逻辑
-│   │   ├── repository/      # 数据访问层
-│   │   └── server/          # 服务器配置
-│   ├── migrations/          # 数据库迁移脚本
-│   └── config.yaml          # 配置文件
-├── frontend/
-│   ├── src/
-│   │   ├── api/             # API 调用
-│   │   ├── components/      # Vue 组件
-│   │   ├── views/           # 页面视图
-│   │   ├── types/           # TypeScript 类型
-│   │   └── i18n/            # 国际化
-│   ├── package.json         # 依赖配置
-│   └── pnpm-lock.yaml       # pnpm 锁文件（必须提交）
-└── .claude/
-    └── CLAUDE.md            # 本文档
-```
-
-## 七、参考资源
-
-- [上游仓库](https://github.com/Wei-Shaw/sub2api)
-- [Ent 文档](https://entgo.io/docs/getting-started)
-- [Vue3 文档](https://vuejs.org/)
-- [pnpm 文档](https://pnpm.io/)
+- [README.md](README.md) / [README_CN.md](README_CN.md)
+- [docs/](docs/) 运营与支付文档
+- [deploy/](deploy/) Docker 与安装脚本
